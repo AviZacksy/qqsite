@@ -31,11 +31,9 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
     if (window.scrollY > 100) {
-        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-        navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+        navbar.classList.add('scrolled');
     } else {
-        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
-        navbar.style.boxShadow = 'none';
+        navbar.classList.remove('scrolled');
     }
 });
 
@@ -399,9 +397,114 @@ revealSections.forEach(section => {
     revealObserver.observe(section);
 });
 
+// Feedback System
+let feedbackData = JSON.parse(localStorage.getItem('feedbackData')) || [];
+
+// Load existing feedback on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadFeedback();
+});
+
+// Feedback form submission
+const feedbackForm = document.getElementById('feedbackForm');
+if (feedbackForm) {
+    feedbackForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(feedbackForm);
+        const feedback = {
+            id: Date.now(),
+            name: document.getElementById('clientName').value,
+            email: document.getElementById('clientEmail').value,
+            company: document.getElementById('clientCompany').value,
+            service: document.getElementById('serviceType').value,
+            rating: document.querySelector('input[name="rating"]:checked')?.value,
+            text: document.getElementById('feedbackText').value,
+            date: new Date().toLocaleDateString(),
+            timestamp: Date.now()
+        };
+        
+        // Validate required fields
+        if (!feedback.name || !feedback.email || !feedback.rating || !feedback.text) {
+            showNotification('Please fill in all required fields and select a rating.', 'error');
+            return;
+        }
+        
+        // Add feedback to array
+        feedbackData.unshift(feedback);
+        
+        // Save to localStorage
+        localStorage.setItem('feedbackData', JSON.stringify(feedbackData));
+        
+        // Reload feedback display
+        loadFeedback();
+        
+        // Show success message
+        showNotification('Thank you for your feedback! It has been submitted successfully.', 'success');
+        
+        // Reset form
+        feedbackForm.reset();
+    });
+}
+
+// Load and display feedback
+function loadFeedback() {
+    const feedbackGrid = document.getElementById('feedbackGrid');
+    if (!feedbackGrid) return;
+    
+    // Sort by newest first
+    const sortedFeedback = feedbackData.sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Display only latest 6 feedbacks
+    const displayFeedback = sortedFeedback.slice(0, 6);
+    
+    if (displayFeedback.length === 0) {
+        feedbackGrid.innerHTML = `
+            <div class="no-feedback">
+                <p>No feedback yet. Be the first to share your experience!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    feedbackGrid.innerHTML = displayFeedback.map(feedback => `
+        <div class="feedback-card">
+            <div class="feedback-content">
+                <div class="stars">
+                    ${generateStars(feedback.rating)}
+                </div>
+                <p>"${feedback.text}"</p>
+                <div class="feedback-author">
+                    <div class="author-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="author-info">
+                        <h4>${feedback.name}</h4>
+                        <span>${feedback.company || 'Client'}</span>
+                        <small>${feedback.date}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Generate star rating HTML
+function generateStars(rating) {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+            stars.push('<i class="fas fa-star"></i>');
+        } else {
+            stars.push('<i class="far fa-star"></i>');
+        }
+    }
+    return stars.join('');
+}
+
 // Initialize all animations and interactions
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('TechVision Pro - Website loaded successfully!');
+    console.log('S.oni Developer - Website loaded successfully!');
     
     // Add loading class to body
     document.body.classList.add('loaded');
